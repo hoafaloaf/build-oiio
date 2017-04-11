@@ -1,0 +1,12 @@
+boost_cxxflags="-I@PYTHON_INCLUDE_DIR@ -fPIC"
+boost_root="@CMAKE_CURRENT_BINARY_DIR@/boost-@boost_ver@/src/boost"
+
+export PATH=$(dirname @PYTHON_EXECUTABLE@):$PATH
+export LD_LIBRARY_PATH=@PYTHON_LIBRARY_DIR@:$LD_LIBRARY_PATH
+
+echo "using gcc : @GCC_VERSION_MAJOR@.@GCC_VERSION_MINOR@ : @CMAKE_CXX_COMPILER@ ; " >> $boost_root/tools/build/src/user-config.jam
+echo "using python : @python_ver@ : "$(dirname $(dirname @PYTHON_EXECUTABLE@))" ; " >> $boost_root/tools/build/src/user-config.jam
+
+$boost_root/bjam install -a --layout=versioned link=shared threading=multi \
+    cxxflags="$boost_cxxflags" --with-thread --with-filesystem \
+    --with-program_options --with-python --with-regex --with-system

@@ -1,0 +1,367 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index ea3917c..ca57d26 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -152,7 +152,7 @@ if (CMAKE_COMPILER_IS_GNUCC AND NOT (CMAKE_COMPILER_IS_CLANG OR CMAKE_COMPILER_I
+     if (NOT ${GCC_VERSION} VERSION_LESS 4.8)
+         # suppress a warning that Boost::Python hits in g++ 4.8
+         add_definitions ("-Wno-error=unused-local-typedefs")
+-        add_definitions ("-Wno-unused-local-typedefs")
++        add_definitions ("-Wunused-local-typedefs")
+     endif ()
+     if (NOT ${GCC_VERSION} VERSION_LESS 4.5)
+         add_definitions ("-Wno-unused-result")
+@@ -197,8 +197,8 @@ set (USE_LIBRAW ON CACHE BOOL "Use LibRaw if found")
+ set (LIBRAW_PATH "" CACHE STRING "Custom LibRaw path")
+ set (NOTHREADS OFF CACHE BOOL "Compile with no threads or locking")
+ set (OIIO_THREAD_ALLOW_DCLP ON CACHE BOOL "OIIO threads may use DCLP for speed")
+-set (PYTHON_VERSION 2.6)
+-set (PYTHON3_VERSION 3.2)
++set (PYTHON_VERSION 2.6 CACHE STRING "Version of python against which you'd like to bind.")
++set (PYTHON3_VERSION 3.2 CACHE STRING "Version of python3 against which you'd like to bind.")
+ set (USE_NUKE ON CACHE BOOL "Build Nuke plugins, if Nuke is found")
+ set (Nuke_ROOT "" CACHE STRING "Where to find Nuke installation")
+ set (NUKE_VERSION 7.0)
+@@ -328,7 +328,7 @@ if (UNIX AND NOT SELF_CONTAINED_INSTALL_TREE)
+     # Try to be well-behaved and install into reasonable places according to
+     # the "standard" unix directory heirarchy
+     # TODO: Figure out how to get the correct python directory
+-    set (DEFAULT_PYLIB_INSTALL_DIR "lib/python/site-packages")
++    set (DEFAULT_PYLIB_INSTALL_DIR "lib/python${PYTHON_VERSION}/site-packages")
+     set (DEFAULT_PYLIB3_INSTALL_DIR "lib/python3/site-packages")
+     set (DEFAULT_DOC_INSTALL_DIR "share/doc/OpenImageIO")
+     set (DEFAULT_MAN_INSTALL_DIR "share/man/man1")
+@@ -388,7 +388,7 @@ if (CMAKE_SKIP_RPATH)
+     set (CMAKE_SKIP_RPATH FALSE)
+     unset (CMAKE_INSTALL_RPATH)
+ else ()
+-    set (CMAKE_INSTALL_RPATH "${LIB_INSTALL_DIR}")
++    set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH}:${OIIO_EXTERNAL}/lib")
+     if (NOT IS_ABSOLUTE ${CMAKE_INSTALL_RPATH})
+         set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${LIB_INSTALL_DIR}")
+     endif ()
+diff --git a/src/cmake/externalpackages.cmake b/src/cmake/externalpackages.cmake
+index 4799df2..b7cfc5f 100644
+--- a/src/cmake/externalpackages.cmake
++++ b/src/cmake/externalpackages.cmake
+@@ -8,8 +8,10 @@ if (NOT VERBOSE)
+     set (Field3D_FIND_QUIETLY true)
+     set (Freetype_FIND_QUIETLY true)
+     set (GIF_FIND_QUIETLY true)
+-    set (GLEW_FIND_QUIETLY true)
+-    set (HDF5_FIND_QUIETLY true)
++    #set (GLEW_FIND_QUIETLY true)
++    set (GLEW_FIND_QUIETLY false)
++    #set (HDF5_FIND_QUIETLY true)
++    set (HDF5_FIND_QUIETLY false)
+     set (IlmBase_FIND_QUIETLY true)
+     set (JPEG_FIND_QUIETLY true)
+     set (LibRaw_FIND_QUIETLY true)
+@@ -20,16 +22,19 @@ if (NOT VERBOSE)
+     set (OpenGL_FIND_QUIETLY true)
+     set (OpenJpeg_FIND_QUIETLY true)
+     set (PkgConfig_FIND_QUIETLY true)
+-    set (PNG_FIND_QUIETLY TRUE)
++    #set (PNG_FIND_QUIETLY TRUE)
++    set (PNG_FIND_QUIETLY FALSE)
+     set (PTex_FIND_QUIETLY TRUE)
+     set (PugiXML_FIND_QUIETLY TRUE)
+     set (PythonInterp_FIND_QUIETLY true)
+     set (PythonLibs_FIND_QUIETLY true)
+     set (Qt4_FIND_QUIETLY true)
+     set (Threads_FIND_QUIETLY true)
+-    set (TIFF_FIND_QUIETLY true)
++    #set (TIFF_FIND_QUIETLY true)
++    set (TIFF_FIND_QUIETLY false)
+     set (WEBP_FIND_QUIETLY true)
+-    set (ZLIB_FIND_QUIETLY true)
++    #set (ZLIB_FIND_QUIETLY true)
++    set (ZLIB_FIND_QUIETLY false)
+ endif ()
+ 
+ 
+@@ -40,7 +45,7 @@ setup_path (THIRD_PARTY_TOOLS_HOME
+ # Add all third party tool directories to the include and library paths so
+ # that they'll be correctly found by the various FIND_PACKAGE() invocations.
+ if (THIRD_PARTY_TOOLS_HOME AND EXISTS "${THIRD_PARTY_TOOLS_HOME}")
+-    set (CMAKE_INCLUDE_PATH "${THIRD_PARTY_TOOLS_HOME}/include" "${CMAKE_INCLUDE_PATH}")
++    set (CMAKE_INCLUDE_PATH "${THIRD_PARTY_TOOLS_HOME}/include:${CMAKE_INCLUDE_PATH}" "${CMAKE_INCLUDE_PATH}")
+     # Detect third party tools which have been successfully built using the
+     # lock files which are placed there by the external project Makefile.
+     file (GLOB _external_dir_lockfiles "${THIRD_PARTY_TOOLS_HOME}/*.d")
+@@ -49,8 +54,8 @@ if (THIRD_PARTY_TOOLS_HOME AND EXISTS "${THIRD_PARTY_TOOLS_HOME}")
+         get_filename_component (_ext_dirname ${_dir_lockfile} NAME)
+         # Strip off the .d extension
+         string (REGEX REPLACE "\\.d$" "" _ext_dirname ${_ext_dirname})
+-        set (CMAKE_INCLUDE_PATH "${THIRD_PARTY_TOOLS_HOME}/include/${_ext_dirname}" ${CMAKE_INCLUDE_PATH})
+-        set (CMAKE_LIBRARY_PATH "${THIRD_PARTY_TOOLS_HOME}/lib/${_ext_dirname}" ${CMAKE_LIBRARY_PATH})
++        set (CMAKE_INCLUDE_PATH "${THIRD_PARTY_TOOLS_HOME}/include/${_ext_dirname}:${CMAKE_INCLUDE_PATH}" ${CMAKE_INCLUDE_PATH})
++        set (CMAKE_LIBRARY_PATH "${THIRD_PARTY_TOOLS_HOME}/lib/${_ext_dirname}:${CMAKE_LIBRARY_PATH}" ${CMAKE_LIBRARY_PATH})
+     endforeach ()
+ endif ()
+ 
+@@ -268,10 +273,12 @@ endif ()
+ if (USE_OPENGL)
+     set (GLEW_VERSION 1.5.1)
+     find_library (GLEW_LIBRARIES
+-                  NAMES GLEW glew32)
++                  NAMES GLEW glew32
++                  PATHS ${OIIO_EXTERNAL}/lib)
+     find_path (GLEW_INCLUDES
+                NAMES glew.h
+-               PATH_SUFFIXES GL)
++               PATH_SUFFIXES GL
++               PATHS ${OIIO_EXTERNAL}/include)
+     if (GLEW_INCLUDES AND GLEW_LIBRARIES)
+         set (GLEW_FOUND TRUE)
+         if (NOT GLEW_FIND_QUIETLY)
+@@ -344,7 +351,7 @@ if (USE_FIELD3D AND HDF5_FOUND)
+         set (FIELD3D_INCLUDES "${FIELD3D_HOME}/include")
+     else ()
+         find_path (FIELD3D_INCLUDES Field3D/Field.h
+-                   "${THIRD_PARTY_TOOLS}/include"
++                   "${THIRD_PARTY_TOOLS_HOME}/include"
+                    "${PROJECT_SOURCE_DIR}/src/include"
+                    "${FIELD3D_HOME}/include"
+                   )
+@@ -443,12 +450,12 @@ if (NOT WEBP_FIND_QUIETLY)
+     message (STATUS "WEBP_HOME=${WEBP_HOME}")
+ endif ()
+ find_path (WEBP_INCLUDE_DIR webp/encode.h
+-           "${THIRD_PARTY_TOOLS}/include"
++           "${THIRD_PARTY_TOOLS_HOME}/include"
+            "${PROJECT_SOURCE_DIR}/src/include"
+            "${WEBP_HOME}")
+ find_library (WEBP_LIBRARY
+               NAMES webp
+-              PATHS "${THIRD_PARTY_TOOLS_HOME}/lib/"
++              PATHS "${THIRD_PARTY_TOOLS_HOME}/lib"
+               "${WEBP_HOME}"
+              )
+ if (WEBP_INCLUDE_DIR AND WEBP_LIBRARY)
+@@ -517,10 +524,14 @@ endif ()
+ # OpenSSL Setup
+ 
+ if (USE_OPENSSL)
+-    find_package (OpenSSL)
++    #find_package (OpenSSL)
++    set(OPENSSL_FOUND TRUE)
++    set(OPENSSL_INCLUDE_DIR "${OPENSSL_ROOT_DIR}/include")
++    set(OPENSSL_LIBRARIES ${OPENSSL_ROOT_DIR}/lib/libcrypto.a;${OPENSSL_ROOT_DIR}/lib/libssl.a)
+     if (OPENSSL_FOUND)
+         if (NOT OpenSSL_FIND_QUIETLY)
+             message (STATUS "OpenSSL enabled")
++            message(STATUS "OPENSSL_LIBRARIES: ${OPENSSL_LIBRARIES}")
+             message(STATUS "OPENSSL_INCLUDES: ${OPENSSL_INCLUDE_DIR}")
+         endif ()
+         include_directories (${OPENSSL_INCLUDE_DIR})
+diff --git a/src/cmake/modules/FindOpenJpeg.cmake b/src/cmake/modules/FindOpenJpeg.cmake
+index a683be7..837d0f3 100644
+--- a/src/cmake/modules/FindOpenJpeg.cmake
++++ b/src/cmake/modules/FindOpenJpeg.cmake
+@@ -59,17 +59,22 @@ endmacro ()
+ 
+ # Generic search paths
+ set (OpenJpeg_include_paths
++     ${OPENJPEG_HOME}/include/openjpeg-2.1
+      /usr/local/include/openjpeg-2.1
++     ${OPENJPEG_HOME}/include/openjpeg-2.0
+      /usr/local/include/openjpeg-2.0
++     ${OPENJPEG_HOME}/include/openjpeg
+      /usr/local/include/openjpeg
+      /usr/local/include
+      /usr/include/openjpeg
++     ${OPENJPEG_HOME}/include/openjpeg-1.5
+      /usr/include/openjpeg-1.5
+      /usr/local/include/openjpeg-1.5
+      /usr/include
+      /opt/local/include)
+ 
+ set (OpenJpeg_library_paths
++  ${OPENJPEG_HOME}/lib
+   /usr/lib
+   /usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}
+   /usr/local/lib
+diff --git a/src/iv/CMakeLists.txt b/src/iv/CMakeLists.txt
+index 753a17b..15d0009 100644
+--- a/src/iv/CMakeLists.txt
++++ b/src/iv/CMakeLists.txt
+@@ -20,9 +20,9 @@ if (QT4_FOUND AND OPENGL_FOUND AND GLEW_FOUND)
+     endif()
+     add_executable (iv ${iv_srcs})
+     set_target_properties (iv PROPERTIES FOLDER "Tools")
+-    target_link_libraries (iv OpenImageIO ${QT_LIBRARIES} ${OPENGL_LIBRARIES} 
+-                               ${Boost_LIBRARIES} ${CMAKE_DL_LIBS}
+-                               ${GLEW_LIBRARIES})
++    target_link_libraries (iv OpenImageIO ${CMAKE_DL_LIBS} ${QT_LIBRARIES}
++                               ${OPENGL_LIBRARIES} ${Boost_LIBRARIES}
++                               ${CMAKE_DL_LIBS} ${GLEW_LIBRARIES})
+     oiio_install_targets (iv)
+ 
+ else ()
+diff --git a/src/libOpenImageIO/color_ocio.cpp b/src/libOpenImageIO/color_ocio.cpp
+index 3206ec0..b67bd8b 100644
+--- a/src/libOpenImageIO/color_ocio.cpp
++++ b/src/libOpenImageIO/color_ocio.cpp
+@@ -41,7 +41,7 @@
+ #include "OpenImageIO/refcnt.h"
+ 
+ #ifdef USE_OCIO
+-#include <OpenColorIO/OpenColorIO.h>
++#include <OpenColorIO.h>
+ namespace OCIO = OCIO_NAMESPACE;
+ #endif
+ 
+diff --git a/src/libutil/CMakeLists.txt b/src/libutil/CMakeLists.txt
+index a0abb14..660e675 100644
+--- a/src/libutil/CMakeLists.txt
++++ b/src/libutil/CMakeLists.txt
+@@ -40,62 +40,62 @@ if (OIIO_BUILD_TESTS)
+ 
+     add_executable (atomic_test atomic_test.cpp)
+     set_target_properties (atomic_test PROPERTIES FOLDER "Unit Tests")
+-    target_link_libraries (atomic_test OpenImageIO_Util ${Boost_LIBRARIES} ${CMAKE_DL_LIBS})
++    target_link_libraries (atomic_test OpenImageIO_Util ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} rt)
+     add_test (unit_atomic atomic_test)
+ 
+     add_executable (array_view_test array_view_test.cpp)
+     set_target_properties (array_view_test PROPERTIES FOLDER "Unit Tests")
+-    target_link_libraries (array_view_test OpenImageIO_Util ${Boost_LIBRARIES} ${CMAKE_DL_LIBS})
++    target_link_libraries (array_view_test OpenImageIO_Util ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} rt)
+     add_test (unit_array_view array_view_test)
+ 
+     add_executable (spinlock_test spinlock_test.cpp)
+     set_target_properties (spinlock_test PROPERTIES FOLDER "Unit Tests")
+-    target_link_libraries (spinlock_test OpenImageIO_Util ${Boost_LIBRARIES} ${CMAKE_DL_LIBS})
++    target_link_libraries (spinlock_test OpenImageIO_Util ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} rt)
+     add_test (unit_spinlock spinlock_test)
+ 
+     add_executable (spin_rw_test spin_rw_test.cpp)
+     set_target_properties (spin_rw_test PROPERTIES FOLDER "Unit Tests")
+-    target_link_libraries (spin_rw_test OpenImageIO_Util ${Boost_LIBRARIES} ${CMAKE_DL_LIBS})
++    target_link_libraries (spin_rw_test OpenImageIO_Util ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} rt)
+     add_test (unit_spin_rw spin_rw_test)
+ 
+     add_executable (ustring_test ustring_test.cpp)
+     set_target_properties (ustring_test PROPERTIES FOLDER "Unit Tests")
+-    target_link_libraries (ustring_test OpenImageIO_Util ${Boost_LIBRARIES} ${CMAKE_DL_LIBS})
++    target_link_libraries (ustring_test OpenImageIO_Util ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} rt)
+     add_test (unit_ustring ustring_test)
+ 
+     add_executable (strutil_test strutil_test.cpp)
+     set_target_properties (strutil_test PROPERTIES FOLDER "Unit Tests")
+-    target_link_libraries (strutil_test OpenImageIO_Util ${Boost_LIBRARIES} ${CMAKE_DL_LIBS})
++    target_link_libraries (strutil_test OpenImageIO_Util ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} rt)
+     add_test (unit_strutil strutil_test)
+ 
+     add_executable (fmath_test fmath_test.cpp)
+     set_target_properties (fmath_test PROPERTIES FOLDER "Unit Tests")
+-    target_link_libraries (fmath_test OpenImageIO_Util ${Boost_LIBRARIES} ${CMAKE_DL_LIBS})
++    target_link_libraries (fmath_test OpenImageIO_Util ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} rt)
+     add_test (unit_fmath fmath_test)
+ 
+     add_executable (filesystem_test filesystem_test.cpp)
+     set_target_properties (filesystem_test PROPERTIES FOLDER "Unit Tests")
+-    target_link_libraries (filesystem_test OpenImageIO_Util ${Boost_LIBRARIES} ${CMAKE_DL_LIBS})
++    target_link_libraries (filesystem_test OpenImageIO_Util ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} rt)
+     add_test (unit_filesystem filesystem_test)
+ 
+     add_executable (optparser_test optparser_test.cpp)
+     set_target_properties (optparser_test PROPERTIES FOLDER "Unit Tests")
+-    target_link_libraries (optparser_test OpenImageIO_Util ${Boost_LIBRARIES} ${CMAKE_DL_LIBS})
++    target_link_libraries (optparser_test OpenImageIO_Util ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} rt)
+     add_test (unit_optparser optparser_test)
+ 
+     add_executable (hash_test hash_test.cpp)
+     set_target_properties (hash_test PROPERTIES FOLDER "Unit Tests")
+-    target_link_libraries (hash_test OpenImageIO_Util ${Boost_LIBRARIES} ${CMAKE_DL_LIBS})
++    target_link_libraries (hash_test OpenImageIO_Util ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} rt)
+     add_test (unit_hash hash_test)
+ 
+     add_executable (timer_test timer_test.cpp)
+     set_target_properties (timer_test PROPERTIES FOLDER "Unit Tests")
+-    target_link_libraries (timer_test OpenImageIO_Util ${Boost_LIBRARIES} ${CMAKE_DL_LIBS})
++    target_link_libraries (timer_test OpenImageIO_Util ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} rt)
+     add_test (unit_timer timer_test)
+ 
+     add_executable (simd_test simd_test.cpp)
+     set_target_properties (simd_test PROPERTIES FOLDER "Unit Tests")
+-    target_link_libraries (simd_test OpenImageIO_Util ${Boost_LIBRARIES} ${CMAKE_DL_LIBS})
++    target_link_libraries (simd_test OpenImageIO_Util ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} rt)
+     add_test (unit_simd simd_test)
+ 
+ endif ()
+diff --git a/src/nuke/txReader/CMakeLists.txt b/src/nuke/txReader/CMakeLists.txt
+index 3e72b6d..3056650 100644
+--- a/src/nuke/txReader/CMakeLists.txt
++++ b/src/nuke/txReader/CMakeLists.txt
+@@ -25,8 +25,11 @@ else ()
+     add_definitions (-DUSE_GLEW)
+     set_target_properties (txReader PROPERTIES
+         PREFIX ""
+-        COMPILE_FLAGS "-fPIC -msse")
++        COMPILE_FLAGS "-fPIC -msse"
++        INSTALL_RPATH "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::${CMAKE_INSTALL_RPATH}"
++    )
++
+ endif ()
+ 
+ install (TARGETS txReader
+-    LIBRARY DESTINATION "${LIB_INSTALL_DIR}/nuke")
++    LIBRARY DESTINATION "${LIB_INSTALL_DIR}/nuke-${NUKE_VERSION_MAJOR}")
+diff --git a/src/nuke/txReader/txReader.cpp b/src/nuke/txReader/txReader.cpp
+index 6c6c328..4806d04 100644
+--- a/src/nuke/txReader/txReader.cpp
++++ b/src/nuke/txReader/txReader.cpp
+@@ -354,5 +354,5 @@ static bool test(int fd, const unsigned char* block, int length) {
+            block[2] == 0x31 && block[3] == 0x01;
+ }
+ 
+-const Reader::Description TxReaderNS::txReader::d("tx\0TX\0", buildReader, test,
++const Reader::Description TxReaderNS::txReader::d("tx\0TX\0tex\0TEX\0", buildReader, test,
+                                                   buildformat);
+diff --git a/src/nuke/txWriter/CMakeLists.txt b/src/nuke/txWriter/CMakeLists.txt
+index 66312bc..bb4bacf 100644
+--- a/src/nuke/txWriter/CMakeLists.txt
++++ b/src/nuke/txWriter/CMakeLists.txt
+@@ -25,8 +25,10 @@ else ()
+     add_definitions (-DUSE_GLEW)
+     set_target_properties (txWriter PROPERTIES
+         PREFIX ""
+-        COMPILE_FLAGS "-fPIC -msse")
++        COMPILE_FLAGS "-fPIC -msse"
++        INSTALL_RPATH "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::${CMAKE_INSTALL_RPATH}"
++    )
+ endif ()
+ 
+ install (TARGETS txWriter
+-    LIBRARY DESTINATION "${LIB_INSTALL_DIR}/nuke")
++    LIBRARY DESTINATION "${LIB_INSTALL_DIR}/nuke-${NUKE_VERSION_MAJOR}")
+diff --git a/src/nuke/txWriter/txWriter.cpp b/src/nuke/txWriter/txWriter.cpp
+index ba4a838..d43cf63 100644
+--- a/src/nuke/txWriter/txWriter.cpp
++++ b/src/nuke/txWriter/txWriter.cpp
+@@ -308,4 +308,4 @@ public:
+ 
+ 
+ static Writer* build(Write* iop) { return new TxWriterNS::txWriter(iop); }
+-const Writer::Description TxWriterNS::txWriter::d("tx\0TX\0", build);
++const Writer::Description TxWriterNS::txWriter::d("tx\0TX\0tex\0TEX\0", build);
+diff --git a/src/python/CMakeLists.txt b/src/python/CMakeLists.txt
+index 81a4a89..023060c 100644
+--- a/src/python/CMakeLists.txt
++++ b/src/python/CMakeLists.txt
+@@ -11,13 +11,6 @@ endif ()
+ if (NOT BOOST_CUSTOM AND NOT BUILD_PY3)
+     #Unset those, otherwise find_package(PythonLibs) will pick up old stuff
+     #if it has been run before
+-    unset(Python_ADDITIONAL_VERSIONS)
+-    unset(PYTHON_LIBRARY)
+-    unset(PYTHON_LIBRARY CACHE)
+-    unset(PYTHON_INCLUDE_DIR)
+-    unset(PYTHON_INCLUDE_DIR CACHE)
+-    unset(PYTHON_INCLUDE_PATH)
+-    unset(PYTHON_INCLUDE_PATH CACHE)
+     find_package (PythonLibs ${PYTHON_VERSION} REQUIRED)
+     find_package (Boost 1.42 REQUIRED COMPONENTS python)
+ elseif (BOOST_CUSTOM AND NOT BUILD_PY3)

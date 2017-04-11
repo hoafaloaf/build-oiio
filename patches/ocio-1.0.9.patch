@@ -1,0 +1,58 @@
+diff --git a/src/apps/ocioconvert/CMakeLists.txt b/src/apps/ocioconvert/CMakeLists.txt
+index 9b4dce4..d82fc76 100644
+--- a/src/apps/ocioconvert/CMakeLists.txt
++++ b/src/apps/ocioconvert/CMakeLists.txt
+@@ -4,13 +4,15 @@ if (OIIO_FOUND)
+         ${CMAKE_BINARY_DIR}/export/
+         ${CMAKE_SOURCE_DIR}/src/apps/share/
+         ${OIIO_INCLUDES}
++        ${BOOST_INCLUDE_DIR}
+     )
+     
+     file(GLOB_RECURSE share_src_files "${CMAKE_SOURCE_DIR}/src/apps/share/*.cpp")
+     
+     add_executable(ocioconvert ${share_src_files} main.cpp)
+     
+-    target_link_libraries(ocioconvert ${OIIO_LIBRARIES} OpenColorIO ${CMAKE_DL_LIBS})
++    target_link_libraries(ocioconvert ${FIELD3D_LIBRARY} ${OIIO_LIBRARIES}
++        ${HDF5_LIBRARIES} ${OPENEXR_LIBRARIES} OpenColorIO ${CMAKE_DL_LIBS})
+     
+     install(TARGETS ocioconvert DESTINATION ${CMAKE_INSTALL_EXEC_PREFIX}/bin)
+ endif()
+diff --git a/src/apps/ociodisplay/CMakeLists.txt b/src/apps/ociodisplay/CMakeLists.txt
+index e80e9f9..3e4ac82 100644
+--- a/src/apps/ociodisplay/CMakeLists.txt
++++ b/src/apps/ociodisplay/CMakeLists.txt
+@@ -4,8 +4,10 @@ include_directories(
+     ${OPENGL_INCLUDE_DIR}
+     ${OIIO_INCLUDES}
+     ${GLEW_INCLUDES}
++    ${BOOST_INCLUDE_DIR}
+ )
+ add_executable(ociodisplay main.cpp)
+ # set_target_properties(ociodisplay PROPERTIES INSTALL_RPATH ${OIIO_LIBRARIES} )
+-target_link_libraries(ociodisplay ${GLEW_LIBRARIES} ${GLUT_LIBRARY} ${OPENGL_LIBRARY} ${OIIO_LIBRARIES} OpenColorIO)
++target_link_libraries(ociodisplay ${FIELD3D_LIBRARY} ${GLEW_LIBRARIES}
++    ${GLUT_LIBRARY} ${OPENGL_LIBRARY} ${OIIO_LIBRARIES} OpenColorIO)
+ install(TARGETS ociodisplay DESTINATION ${CMAKE_INSTALL_EXEC_PREFIX}/bin)
+diff --git a/src/apps/ociolutimage/CMakeLists.txt b/src/apps/ociolutimage/CMakeLists.txt
+index fa8ee77..d5dc54e 100644
+--- a/src/apps/ociolutimage/CMakeLists.txt
++++ b/src/apps/ociolutimage/CMakeLists.txt
+@@ -4,13 +4,15 @@ if (OIIO_FOUND)
+         ${CMAKE_BINARY_DIR}/export/
+         ${CMAKE_SOURCE_DIR}/src/apps/share/
+         ${OIIO_INCLUDES}
++        ${BOOST_INCLUDE_DIR}
+     )
+     
+     file(GLOB_RECURSE share_src_files "${CMAKE_SOURCE_DIR}/src/apps/share/*.cpp")
+     
+     add_executable(ociolutimage ${share_src_files} main.cpp)
+     
+-    target_link_libraries(ociolutimage ${OIIO_LIBRARIES} OpenColorIO ${CMAKE_DL_LIBS})
++    target_link_libraries(ociolutimage ${FIELD3D_LIBRARY} ${OIIO_LIBRARIES}
++        OpenColorIO ${CMAKE_DL_LIBS})
+     
+     install(TARGETS ociolutimage DESTINATION ${CMAKE_INSTALL_EXEC_PREFIX}/bin)
+ endif()

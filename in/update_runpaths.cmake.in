@@ -1,0 +1,221 @@
+set(PATCHELF @patchelf_binary@)
+set(EXTERNAL_DIR @EXTERNAL_DIR@)
+set(INSTALL_ROOT @INSTALL_ROOT@)
+set(OIIO_LIBRARY_SUFFIX @OIIO_LIBRARY_SUFFIX@)
+
+##  Cheesy, but hey -- it does the trick. :)
+set(current_binary_dir @CMAKE_CURRENT_BINARY_DIR@)
+
+set(PYTHON_PKGS @INSTALL_ROOT@/lib/python@python_ver@/site-packages)
+set(NUKE_PLUGIN_DIR @INSTALL_ROOT@/lib/nuke-@NUKE_VERSION_MAJOR@)
+
+set(RUNPATH_OIIO_BINARIES @runpath_oiio_binaries@)
+set(RUNPATH_OIIO_LIBRARIES @runpath_oiio_libraries@)
+set(RUNPATH_OIIO_PYTHON_LIBRARIES @runpath_oiio_python_libraries@)
+
+set(RUNPATH_OCIO_BINARIES @runpath_ocio_binaries@)
+set(RUNPATH_OCIO_LIBRARIES @runpath_ocio_libraries@)
+set(RUNPATH_OCIO_PYTHON_LIBRARIES @runpath_ocio_python_libraries@)
+
+set(RUNPATH_NUKE_PLUGINS @runpath_nuke_plugins@)
+
+set(BUILD_OCIO @BUILD_OCIO@)
+
+set(OCIO_VERSION_MAJOR @OCIO_VERSION_MAJOR@)
+set(oiio_version_minor @OIIO_VERSION_MAJOR@.@OIIO_VERSION_MINOR@)
+
+set(ocio_library "libOpenColorIO.so.${OCIO_VERSION_MAJOR}")
+set(oiio_library "libOpenImageIO.so.${oiio_version_minor}")
+
+set(nuke_runpath "\$ORIGIN/../:\$ORIGIN/../../${EXTERNAL_DIR}/")
+
+message("Updating RUNPATH OIIO libraries ...")
+foreach(_library ${RUNPATH_OIIO_LIBRARIES})
+    set(_soname "${_library}.${oiio_version_minor}.${OIIO_LIBRARY_SUFFIX}")
+    get_filename_component(_realpath ${_library} REALPATH)
+    get_filename_component(_realpath ${_realpath} NAME)
+
+    if("${_library}" MATCHES "libOpenImageIO.so")
+        set(_extra_args
+            --remove-needed ${ocio_library}
+            --add-needed ${ocio_library}.${OIIO_LIBRARY_SUFFIX}
+        )
+    endif()
+
+    message(STATUS "Updating ${INSTALL_ROOT}/lib/${_library} ...")
+    execute_process(
+        COMMAND
+            ${PATCHELF}
+                --set-rpath "\$ORIGIN/:\$ORIGIN/../${EXTERNAL_DIR}/"
+                ${_extra_args}
+                ${_library}
+        #COMMAND ${PATCHELF} --set-soname ${_soname} ${_library}
+        COMMAND ${CMAKE_COMMAND} -E create_symlink ${_realpath} ${_soname}
+        ERROR_VARIABLE runpath_error
+        OUTPUT_VARIABLE runpath_output
+        RESULT_VARIABLE runpath_result
+        WORKING_DIRECTORY ${INSTALL_ROOT}/lib
+    )
+    if(${runpath_output})
+        message(WARNING ${runpath_output})
+    endif()
+endforeach(_library)
+
+message("Updating RUNPATH OCIO libraries ...")
+foreach(_library ${RUNPATH_OCIO_LIBRARIES})
+    set(_soname "${_library}.${OCIO_VERSION_MAJOR}.${OIIO_LIBRARY_SUFFIX}")
+    get_filename_component(_realpath ${_library} REALPATH)
+    get_filename_component(_realpath ${_realpath} NAME)
+
+    message(STATUS "Updating ${INSTALL_ROOT}/lib/${_library} ...")
+    execute_process(
+        COMMAND
+            ${PATCHELF}
+                --set-rpath "\$ORIGIN/:\$ORIGIN/../${EXTERNAL_DIR}/"
+                ${_library}
+        #COMMAND ${PATCHELF} --set-soname ${_soname} ${_library}
+        COMMAND ${CMAKE_COMMAND} -E create_symlink ${_realpath} ${_soname}
+        ERROR_VARIABLE runpath_error
+        OUTPUT_VARIABLE runpath_output
+        RESULT_VARIABLE runpath_result
+        WORKING_DIRECTORY ${INSTALL_ROOT}/lib
+    )
+    if(${runpath_output})
+        message(WARNING ${runpath_output})
+    endif()
+endforeach(_library)
+
+
+message("Updating RUNPATH for OIIO python libraries ...")
+foreach(_library ${RUNPATH_OIIO_PYTHON_LIBRARIES})
+    message(STATUS "Updating ${PYTHON_PKGS}/${_library} ...")
+
+    execute_process(
+        COMMAND
+            ${PATCHELF}
+                --set-rpath "\$ORIGIN/../../../lib/:\$ORIGIN/../../../${EXTERNAL_DIR}/"
+                --remove-needed ${ocio_library}
+                --add-needed ${ocio_library}.${OIIO_LIBRARY_SUFFIX}
+                --remove-needed ${oiio_library}
+                --add-needed ${oiio_library}.${OIIO_LIBRARY_SUFFIX}
+                ${_library}
+        ERROR_VARIABLE runpath_error
+        OUTPUT_VARIABLE runpath_output
+        RESULT_VARIABLE runpath_result
+        WORKING_DIRECTORY ${PYTHON_PKGS}
+    )
+    if(${runpath_output})
+        message(WARNING ${runpath_output})
+    endif()
+endforeach(_library)
+
+message("Updating RUNPATH for OCIO python libraries ...")
+foreach(_library ${RUNPATH_OCIO_PYTHON_LIBRARIES})
+    message(STATUS "Updating ${PYTHON_PKGS}/${_library} ...")
+
+    execute_process(
+        COMMAND
+            ${PATCHELF}
+                --set-rpath "\$ORIGIN/../../../lib/:\$ORIGIN/../../../${EXTERNAL_DIR}/"
+                --remove-needed ${ocio_library}
+                --add-needed ${ocio_library}.${OIIO_LIBRARY_SUFFIX}
+                ${_library}
+        ERROR_VARIABLE runpath_error
+        OUTPUT_VARIABLE runpath_output
+        RESULT_VARIABLE runpath_result
+        WORKING_DIRECTORY ${PYTHON_PKGS}
+    )
+    if(${runpath_output})
+        message(WARNING ${runpath_output})
+    endif()
+endforeach(_library)
+
+
+message("Updating RUNPATH for OIIO binaries ...")
+foreach(_binary ${RUNPATH_OIIO_BINARIES})
+    message(STATUS "Updating ${INSTALL_ROOT}/bin/${_binary} ...")
+    execute_process(
+        COMMAND
+            ${PATCHELF}
+                --set-rpath "\$ORIGIN/../lib/:\$ORIGIN/../${EXTERNAL_DIR}/"
+                --remove-needed ${ocio_library}
+                --add-needed ${ocio_library}.${OIIO_LIBRARY_SUFFIX}
+                --remove-needed ${oiio_library}
+                --add-needed ${oiio_library}.${OIIO_LIBRARY_SUFFIX}
+                ${_binary}
+        ERROR_VARIABLE runpath_error
+        OUTPUT_VARIABLE runpath_output
+        RESULT_VARIABLE runpath_result
+        WORKING_DIRECTORY ${INSTALL_ROOT}/bin
+    )
+    if(${runpath_output})
+        message(WARNING ${runpath_output})
+    endif()
+endforeach(_binary)
+
+message("Updating RUNPATH for OCIO binaries ...")
+foreach(_binary ${RUNPATH_OCIO_BINARIES})
+    message(STATUS "Updating ${INSTALL_ROOT}/bin/${_binary} ...")
+
+    set(_options
+        --remove-needed ${ocio_library}
+        --add-needed ${ocio_library}.${OIIO_LIBRARY_SUFFIX}
+    )
+    if(NOT "${_binary}" MATCHES "ociobakelut")
+        list(APPEND _options
+            --remove-needed ${oiio_library}
+            --add-needed ${oiio_library}.${OIIO_LIBRARY_SUFFIX}
+        )
+    endif()
+
+    execute_process(
+        COMMAND
+            ${PATCHELF}
+                --set-rpath "\$ORIGIN/../lib/:\$ORIGIN/../${EXTERNAL_DIR}/"
+                ${_options}
+                ${_binary}
+        ERROR_VARIABLE runpath_error
+        OUTPUT_VARIABLE runpath_output
+        RESULT_VARIABLE runpath_result
+        WORKING_DIRECTORY ${INSTALL_ROOT}/bin
+    )
+    if(${runpath_output})
+        message(WARNING ${runpath_output})
+    endif()
+endforeach(_binary)
+
+message("Updating Nuke plugin RUNPATHs ...")
+foreach(_plugin ${RUNPATH_NUKE_PLUGINS})
+    message(STATUS "Updating ${NUKE_PLUGIN_DIR}/${_plugin} ...")
+
+    execute_process(
+        COMMAND
+            ${PATCHELF}
+                --set-rpath "\$ORIGIN/../:\$ORIGIN/../../${EXTERNAL_DIR}/"
+                --remove-needed ${oiio_library}
+                --add-needed ${oiio_library}.${OIIO_LIBRARY_SUFFIX}
+                ${_plugin}
+        ERROR_VARIABLE runpath_error
+        OUTPUT_VARIABLE runpath_output
+        RESULT_VARIABLE runpath_result
+        WORKING_DIRECTORY ${NUKE_PLUGIN_DIR}
+    )
+    if(${runpath_output})
+        message(WARNING ${runpath_output})
+    endif()
+endforeach(_plugin)
+
+message("Updating external library RUNPATHs ...")
+execute_process(
+    COMMAND bash clean_external_libs.bash
+    ERROR_VARIABLE runpath_error
+    OUTPUT_VARIABLE runpath_output
+    RESULT_VARIABLE runpath_result
+    WORKING_DIRECTORY ${current_binary_dir}
+)
+if(${runpath_output})
+    message(STATUS ${runpath_output})
+endif()
+
+message("Done updating RPATHs!")
+

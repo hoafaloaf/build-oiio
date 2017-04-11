@@ -1,0 +1,7 @@
+#!/bin/bash
+ee=@_executable@
+unset LD_PRELOAD
+unset QT_PLUGIN_PATH
+bin_dir=$(dirname $(readlink -f ${BASH_SOURCE[0]}))
+$bin_dir/.$ee.orig "$@"
+

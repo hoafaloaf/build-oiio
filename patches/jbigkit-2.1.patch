@@ -1,0 +1,11 @@
+diff -ur a/libjbig/Makefile b/libjbig/Makefile
+--- a/libjbig/Makefile	2014-03-27 11:47:15.000000000 -0700
++++ b/libjbig/Makefile	2016-08-13 16:08:43.103281400 -0700
+@@ -4,7 +4,7 @@
+ CC = gcc
+ 
+ # Options for the compiler: A high optimization level is suggested
+-CFLAGS = -g -O -W -Wall -ansi -pedantic # --coverage
++CFLAGS = -g -O -W -Wall -ansi -pedantic -fPIC # --coverage
+ 
+ all: libjbig.a libjbig85.a tstcodec tstcodec85

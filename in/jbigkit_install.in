@@ -1,0 +1,9 @@
+jbigkit_root="@CMAKE_CURRENT_BINARY_DIR@/jbigkit-@jbigkit_ver@/src/jbigkit"
+
+for ll in libjbig.a libjbig85.a; do
+    cp $jbigkit_root/libjbig/$ll @prereq_root@/lib
+done
+
+for ii in jbig.h jbig_ar.h jbig85.h; do
+    cp $jbigkit_root/libjbig/$ii @prereq_root@/include
+done
