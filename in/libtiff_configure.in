@@ -1,0 +1,13 @@
+libtiff_root=@CMAKE_CURRENT_BINARY_DIR@/libtiff-@libtiff_ver@/src/libtiff
+
+export CPPFLAGS="@shared_cppflags@"
+export LDFLAGS="@shared_ldflags@"
+
+$libtiff_root/configure --prefix=@EXTERNAL_ROOT@ --with-pic --disable-static \
+    --with-jbig-include-dir=@prereq_root@/include \
+    --with-jbig-lib-dir=@prereq_root@/lib \
+    --with-lzma-include-dir=@prereq_root@/include \
+    --with-lzma-lib-dir=@prereq_root@/lib \
+    --with-zlib-include-dir=@prereq_root@/include \
+    --with-zlib-lib-dir=@prereq_root@/lib
+

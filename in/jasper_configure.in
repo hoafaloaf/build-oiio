@@ -1,0 +1,15 @@
+jasper_root=@CMAKE_CURRENT_BINARY_DIR@/jasper-@jasper_ver@/src/jasper
+gcc_version_nodots=@gcc_version_nodots@
+
+extra_opts=""
+if [ $gcc_version_nodots -lt 44 ]; then
+    extra_opts="--disable-openmp"
+fi
+
+export CPPFLAGS="@shared_cppflags@"
+export LDFLAGS="@shared_ldflags@"
+
+$jasper_root/configure --prefix=@EXTERNAL_ROOT@ --with-pic --disable-static \
+    --enable-shared --with-glut-include-dir=@EXTERNAL_ROOT@/include \
+    --with-glut-lib-dir=@EXTERNAL_ROOT@/lib $extra_opts
+

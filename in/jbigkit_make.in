@@ -1,0 +1,4 @@
+jbigkit_root="@CMAKE_CURRENT_BINARY_DIR@/jbigkit-@jbigkit_ver@/src/jbigkit"
+
+cd $jbigkit_root/libjbig
+make

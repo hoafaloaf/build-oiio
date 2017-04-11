@@ -1,0 +1,18 @@
+#!/bin/bash
+
+pe_bin=@prereq_root@/bin/patchelf
+
+libs=$(find @INSTALL_ROOT@/@EXTERNAL_DIR@ -name "*.so*" -exec readlink -f {} \;)
+libs=`echo $libs | tr " " "\n" | sort | uniq`
+
+for ff in $libs; do
+    echo "-- Checking RPATH for $ff ..."
+    rp=`$pe_bin --print-rpath $ff`
+
+    if [ $rp ]; then
+        echo "   -- Found RPATH: $rp"
+        $pe_bin --set-rpath '$ORIGIN/' $ff
+    else
+        echo "   ++ No need, the library is clean"'!'
+    fi
+done

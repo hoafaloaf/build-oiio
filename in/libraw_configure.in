@@ -1,0 +1,14 @@
+libraw_root=@CMAKE_CURRENT_BINARY_DIR@/libraw-@libraw_ver@/src/libraw
+gcc_version_nodots=@gcc_version_nodots@
+
+extra_opts=""
+if [ $gcc_version_nodots -lt 44 ]; then
+    extra_opts="--disable-openmp"
+fi
+
+export CPPFLAGS="@shared_cppflags@"
+export LDFLAGS="@shared_ldflags@"
+
+$libraw_root/configure --prefix=@EXTERNAL_ROOT@ --with-pic --enable-jasper \
+    --enable-jpeg --enable-lcms --disable-static $extra_opts
+

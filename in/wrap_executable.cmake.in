@@ -1,0 +1,17 @@
+set(bin_path "@INSTALL_ROOT@/bin")
+set(executable "@_executable@")
+set(wrapper_path "@wrapper_path@")
+
+message(STATUS "Wrapping ${executable} executable ...")
+execute_process(
+    COMMAND ${CMAKE_COMMAND} -E rename ${executable} .${executable}.orig
+    COMMAND ${CMAKE_COMMAND} -E copy ${wrapper_path}/${executable} .
+    ERROR_VARIABLE wrap_error
+    OUTPUT_VARIABLE wrap_output
+    RESULT_VARIABLE wrap_result
+    WORKING_DIRECTORY ${bin_path}
+)
+
+if(${wrap_output})
+    message(WARNING ${wrap_output})
+endif()

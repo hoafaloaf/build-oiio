@@ -1,0 +1,6 @@
+lcms2_root=@CMAKE_CURRENT_BINARY_DIR@/lcms2-@lcms2_ver@/src/lcms2
+
+export CPPFLAGS="@shared_cppflags@"
+export LDFLAGS="@shared_ldflags@"
+$lcms2_root/configure --prefix=@EXTERNAL_ROOT@ --with-pic \
+    --with-jpeg=@prereq_root@ --with-tiff=@EXTERNAL_ROOT@
